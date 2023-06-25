@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/osobotu/greenlight/internal/data"
 	"github.com/osobotu/greenlight/internal/validator"
@@ -78,27 +77,39 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (app *application) getAllMoviesHandler(w http.ResponseWriter, r *http.Request) {
-	movies := []data.Movie{
-		{
-			ID:        1,
-			CreatedAt: time.Now(),
-			Title:     "Casablanca",
-			Runtime:   102,
-			Genres:    []string{"drama", "romance", "war"},
-			Version:   1,
-		},
-		{
-			ID:        2,
-			CreatedAt: time.Now(),
-			Title:     "Ted Lasso",
-			Runtime:   102,
-			Genres:    []string{"drama", "romance", "sports"},
-			Version:   1,
-		},
+func (app *application) listMoviesHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title  string
+		Genres []string
+		data.Filters
 	}
 
-	err := app.writeJSON(w, http.StatusOK, envelope{"movies": movies}, nil)
+	v := validator.New()
+
+	qs := r.URL.Query()
+
+	input.Title = app.readString(qs, "title", "")
+	input.Genres = app.readCSV(qs, "genres", []string{})
+
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+
+	input.Filters.Sort = app.readString(qs, "sort", "id")
+
+	input.Filters.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
+
+	if data.ValidateFilters(v, input.Filters); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	movies, metaData, err := app.models.Movies.GetAll(input.Title, input.Genres, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"movies": movies, "metadata": metaData}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
