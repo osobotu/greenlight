@@ -17,6 +17,10 @@ func (app *application) routes() http.Handler {
 
 	// ! users
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
+
+	// ! tokens
+	router.HandlerFunc(http.MethodPost, "/v1/tokens/activation", app.createActivationTokenHandler)
 
 	// ! movies
 	router.HandlerFunc(http.MethodPost, "/v1/movies", app.createMovieHandler)
