@@ -103,12 +103,6 @@ func (app *application) createAuthenticationHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if !user.Activated {
-		v.AddError("user", "user not activated")
-		app.failedValidationResponse(w, r, v.Errors)
-		return
-	}
-
 	match, err := user.Password.Matches(input.Password)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
