@@ -27,7 +27,7 @@ run/api:
 ## db/psql: connect to the database using psql
 .PHONY: db/psql
 db/psql:
-	psql ${GREENLIGHT_DB_DSN}
+	psql ${GREENLIGHT_DB_DSN}      
 
 ## db/migrations/new name=$1: create a new database migration
 .PHONY: db/migrations/new
